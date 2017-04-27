@@ -17,7 +17,7 @@ type apiResponse struct {
 
 type apiHandleFunc func(Db, http.ResponseWriter, map[string]string, *json.Encoder, *json.Decoder)
 
-func mount(router *mux.Router, db Db, auth func(http.HandlerFunc) http.HandlerFunc) {
+func base(router *mux.Router, db Db, auth func(http.HandlerFunc) http.HandlerFunc) {
 
 	if db == nil {
 		panic("Db is nil")
@@ -29,24 +29,24 @@ func mount(router *mux.Router, db Db, auth func(http.HandlerFunc) http.HandlerFu
 		}
 	}
 
-	collectionHandlers := map[string]apiHandlerFunc{
+	collectHandler := map[string]apiHandlerFunc{
 		"GET":     getAll,
 		"POST":    create,
 		"DELETE":  deleteAll,
 		"OPTIONS": optionsCollection,
 	}
 
-	resourceHandlers := map[string]apiHandlerFunc{
+	rsrcHandler := map[string]apiHandlerFunc{
 		"GET":    get,
 		"PUT":    update,
 		"DELETE": del,
 		"OPTIONS", optionsResource,
 	}
 
-	router.HandleFunc("/{collection}", auth(chooseAndInitialize(collectionHandlers, db)))
-	router.HandleFunc("/{collection}/{id}", auth(chooseAndInitialize(resourceHandlers, db)))
+	router.HandleFunc("/{collection}", auth(chooseAndInitialize(collectHandler, db)))
+	router.HandleFunc("/{collection}/{id}", auth(chooseAndInitialize(rsrcHandler, db)))
 
-	func chooseAndInitialize(handlersByMethod map[string]apiHandlerFunc, db Db) http.HandlerFunc {
+	func collect(handlersByMethod map[string]apiHandlerFunc, db Db) http.HandlerFunc {
 		return func(res http.ResponseWriter, req *http.Request) {
 			handler, ok := handlersByMethod[req.Method]
 			if !ok {
@@ -64,7 +64,7 @@ func mount(router *mux.Router, db Db, auth func(http.HandlerFunc) http.HandlerFu
 
 
 
-func optionsCollection(db Db, res http.ResponseWriter, vars map[string]string, enc *json.Encoder, dec *json.Decoder) {
+func optionsCollec(db Db, res http.ResponseWriter, vars map[string]string, enc *json.Encoder, dec *json.Decoder) {
 	h := res.Header()
 
 	h.Add("Allow", "PUT")
@@ -75,7 +75,7 @@ func optionsCollection(db Db, res http.ResponseWriter, vars map[string]string, e
 	res.WriteHeader(http.StatusOK)
 }
 
-func optionsResource(db Db, res http.ResponseWriter, vars map[string]string, enc *json.Encoder, dec *json.Decoder) {
+func optionsRsrc(db Db, res http.ResponseWriter, vars map[string]string, enc *json.Encoder, dec *json.Decoder) {
 	h := res.Header()
 
 	h.Add("Allow", "POST")
